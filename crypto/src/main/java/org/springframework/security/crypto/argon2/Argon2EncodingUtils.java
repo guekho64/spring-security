@@ -31,7 +31,8 @@ import org.bouncycastle.util.Arrays;
  */
 final class Argon2EncodingUtils {
 
-	private static final Base64.Encoder b64encoder = Base64.getEncoder().withoutPadding();
+	private static final Base64.Encoder wpb64encoder = Base64.getEncoder();
+	private static final Base64.Encoder b64encoder = wpb64encoder.withoutPadding();
 
 	private static final Base64.Decoder b64decoder = Base64.getDecoder();
 
@@ -74,7 +75,11 @@ final class Argon2EncodingUtils {
 		stringBuilder.append("$v=").append(parameters.getVersion()).append("$m=").append(parameters.getMemory())
 				.append(",t=").append(parameters.getIterations()).append(",p=").append(parameters.getLanes());
 		if (parameters.getSalt() != null) {
-			stringBuilder.append("$").append(b64encoder.encodeToString(parameters.getSalt()));
+			/* Instead of using a Base64.getEncoder().withoutPadding() instance, if this data (the Salt) is supposed
+			to be later "recovered" or decoded from its Base64 form, a Base64.getEncoder() instance must be used rather
+			than the aforementioned one: Otherwise there's a chance of ending up with corrupted Base64 data due to
+			missing padding, which may alter the message's meaning and/or its End Of Stream location */
+			stringBuilder.append("$").append(wpb64encoder.encodeToString(parameters.getSalt()));
 		}
 		stringBuilder.append("$").append(b64encoder.encodeToString(hash));
 		return stringBuilder.toString();
